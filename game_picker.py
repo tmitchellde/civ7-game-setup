@@ -39,27 +39,49 @@ def get_leader_civ(region, game_type):
 
 # Game loop to allow rerolling
 while True:
-    print("\n🌍 What region do you want to play from?")
-    print("Options: Europe, Asia, Africa, Americas, or Random")
-    region_choice = input("Enter your choice: ").strip().capitalize()
+    print("\n🎭 Do you want to pick by playstyle or region first?")
+    print("Options: Playstyle, Region")
+    choice_order = input("Enter your choice: ").strip().capitalize()
 
-    # Handle random region selection
-    if region_choice == "Random":
-        region_choice = random.choice(list(regions.keys())[:-1])  # Excludes "Global"
-        print(f"🎲 Randomly chosen region: {region_choice}")
-
-    if region_choice not in regions:
-        print("❌ Invalid region. Try again.")
+    if choice_order not in ["Playstyle", "Region"]:
+        print("❌ Invalid choice. Please enter 'Playstyle' or 'Region'.")
         continue
 
-    print("\n🎭 What type of game do you want to play?")
-    print("Options: Militaristic, Economic, Cultural, Scientific, Diplomatic, Expansionist, or Random")
-    game_type = input("Enter your choice: ").strip().capitalize()
+    # If user chooses to pick by playstyle first
+    if choice_order == "Playstyle":
+        print("\n🎭 What type of game do you want to play?")
+        print("Options: Militaristic, Economic, Cultural, Scientific, Diplomatic, Expansionist, or Random")
+        game_type = input("Enter your choice: ").strip().capitalize()
 
-    # Handle random playstyle selection
-    if game_type == "Random":
-        game_type = random.choice(playstyles)
-        print(f"🎲 Randomly chosen playstyle: {game_type}")
+        if game_type == "Random":
+            game_type = random.choice(playstyles)
+            print(f"🎲 Randomly chosen playstyle: {game_type}")
+
+        print("\n🌍 What region do you want to play from?")
+        print("Options: Europe, Asia, Africa, Americas, or Random")
+        region_choice = input("Enter your choice: ").strip().capitalize()
+
+        if region_choice == "Random":
+            region_choice = random.choice(list(regions.keys())[:-1])  # Excludes "Global"
+            print(f"🎲 Randomly chosen region: {region_choice}")
+
+    # If user chooses to pick by region first
+    else:
+        print("\n🌍 What region do you want to play from?")
+        print("Options: Europe, Asia, Africa, Americas, or Random")
+        region_choice = input("Enter your choice: ").strip().capitalize()
+
+        if region_choice == "Random":
+            region_choice = random.choice(list(regions.keys())[:-1])  # Excludes "Global"
+            print(f"🎲 Randomly chosen region: {region_choice}")
+
+        print("\n🎭 What type of game do you want to play?")
+        print("Options: Militaristic, Economic, Cultural, Scientific, Diplomatic, Expansionist, or Random")
+        game_type = input("Enter your choice: ").strip().capitalize()
+
+        if game_type == "Random":
+            game_type = random.choice(playstyles)
+            print(f"🎲 Randomly chosen playstyle: {game_type}")
 
     # Get a leader & civilization based on region & playstyle
     leader, civ = get_leader_civ(region_choice, game_type)
