@@ -1,113 +1,143 @@
 import json
 import random
 
-# Load JSON files
-with open("leaders.json", "r") as f:
-    leaders_data = json.load(f)
-
-with open("civilizations.json", "r") as f:
-    civs_data = json.load(f)
-
-# Define playstyles and regions
-playstyles = ["Militaristic", "Economic", "Cultural", "Scientific", "Diplomatic", "Expansionist"]
-regions = {
-    "Europe": ["France", "Italy", "Spain", "Prussia", "Russia", "Franks"],
-    "Asia": ["Persia", "Han", "Maurya", "Vietnam", "Yamato"],
-    "Africa": ["Aksum", "Egypt"],
-    "Americas": ["Inca", "Shawnee", "America", "Philippines"],
-    "Global": []  # Used for Random
-}
-
-def get_leader_civ(region, game_type):
-    """Select a leader & civilization based on region & playstyle"""
+class GameSetup:
+    """Handles game setup, leader/civilization selection, and rerolling"""
     
-    # Get list of civilizations from selected region
-    valid_civs = [civ for civ in civs_data["Civilizations"] if civ["Name"] in regions[region] or region == "Global"]
-    valid_leaders = [leader for leader in leaders_data["Leaders"] if any(civ in leader["Historical Civ"] for civ in regions[region]) or region == "Global"]
+    PLAYSTYLES = ["Militaristic", "Economic", "Cultural", "Scientific", "Diplomatic", "Expansionist"]
+    REGIONS = {
+        "Europe": ["France", "Italy", "Spain", "Prussia", "Russia", "Franks"],
+        "Asia": ["Persia", "Han", "Maurya", "Vietnam", "Yamato", "Philippines"],
+        "Africa": ["Aksum", "Egypt"],
+        "Americas": ["America", "Shawnee", "Inca", "Gran Colombia"],
+        "Global": []  # Used for Random
+    }
 
-    # Filter by playstyle
-    filtered_leaders = [leader for leader in valid_leaders if game_type in leader["Playstyle"]]
-    filtered_civs = [civ for civ in valid_civs if game_type in civ["Attributes"]]
+    def __init__(self):
+        """Loads data from JSON and initializes variables"""
+        with open("leaders.json", "r", encoding="utf-8") as f:
+            self.leaders_data = json.load(f)
 
-    if not filtered_leaders or not filtered_civs:
-        return None, None  # No matches found
+        with open("civilizations.json", "r", encoding="utf-8") as f:
+            self.civs_data = json.load(f)
 
-    chosen_leader = random.choice(filtered_leaders)
-    chosen_civ = random.choice(filtered_civs)
+        self.region = None
+        self.playstyle = None
+        self.leader = None
+        self.civilization = None
+        self.matching_leaders = []
 
-    return chosen_leader, chosen_civ
+    def get_random_choice(self, options, exclude=None):
+        """Randomly selects an option from a list, excluding a given value"""
+        return random.choice([opt for opt in options if opt != exclude])
 
-# Game loop to allow rerolling
-while True:
-    print("\n🎭 Do you want to pick by playstyle or region first?")
-    print("Options: Playstyle, Region")
-    choice_order = input("Enter your choice: ").strip().capitalize()
+    def select_leader_civ(self):
+        """Selects a leader and civilization based on the chosen region and playstyle"""
+        valid_civs = [civ for civ in self.civs_data["Civilizations"] if civ["Name"] in self.REGIONS[self.region] or self.region == "Global"]
+        valid_leaders = [leader for leader in self.leaders_data["Leaders"] if any(civ in leader["Historical Civ"] for civ in self.REGIONS[self.region]) or self.region == "Global"]
 
-    if choice_order not in ["Playstyle", "Region"]:
-        print("❌ Invalid choice. Please enter 'Playstyle' or 'Region'.")
-        continue
+        self.matching_leaders = [leader for leader in valid_leaders if self.playstyle in leader["Playstyle"]]
+        matching_civs = [civ for civ in valid_civs if self.playstyle in civ["Attributes"]]
 
-    # If user chooses to pick by playstyle first
-    if choice_order == "Playstyle":
-        print("\n🎭 What type of game do you want to play?")
-        print("Options: Militaristic, Economic, Cultural, Scientific, Diplomatic, Expansionist, or Random")
-        game_type = input("Enter your choice: ").strip().capitalize()
+        if not self.matching_leaders or not matching_civs:
+            return None, None
 
-        if game_type == "Random":
-            game_type = random.choice(playstyles)
-            print(f"🎲 Randomly chosen playstyle: {game_type}")
+        self.leader = random.choice(self.matching_leaders)
+        self.civilization = random.choice(matching_civs)
 
-        print("\n🌍 What region do you want to play from?")
-        print("Options: Europe, Asia, Africa, Americas, or Random")
-        region_choice = input("Enter your choice: ").strip().capitalize()
-
-        if region_choice == "Random":
-            region_choice = random.choice(list(regions.keys())[:-1])  # Excludes "Global"
-            print(f"🎲 Randomly chosen region: {region_choice}")
-
-    # If user chooses to pick by region first
-    else:
-        print("\n🌍 What region do you want to play from?")
-        print("Options: Europe, Asia, Africa, Americas, or Random")
-        region_choice = input("Enter your choice: ").strip().capitalize()
-
-        if region_choice == "Random":
-            region_choice = random.choice(list(regions.keys())[:-1])  # Excludes "Global"
-            print(f"🎲 Randomly chosen region: {region_choice}")
-
-        print("\n🎭 What type of game do you want to play?")
-        print("Options: Militaristic, Economic, Cultural, Scientific, Diplomatic, Expansionist, or Random")
-        game_type = input("Enter your choice: ").strip().capitalize()
-
-        if game_type == "Random":
-            game_type = random.choice(playstyles)
-            print(f"🎲 Randomly chosen playstyle: {game_type}")
-
-    # Get a leader & civilization based on region & playstyle
-    leader, civ = get_leader_civ(region_choice, game_type)
-
-    if leader and civ:
+    def display_setup(self):
+        """Displays the selected game setup"""
         print("\n🎮 **Your Civilization 7 Game Setup** 🎮")
-        print(f"🔹 **Region**: {region_choice}")
-        print(f"🔹 **Playstyle**: {game_type}")
-        print(f"👑 **Leader**: {leader['Name']}")
-        print(f"🏛 **Civilization**: {civ['Name']}")
-        
-        # Show leader abilities if available
-        if "Ability" in leader:
-            print(f"🏆 **Leader Ability**: {leader['Ability']}")
+        print(f"🔹 **Region**: {self.region}")
+        print(f"🔹 **Playstyle**: {self.playstyle}")
+        print(f"👑 **Leader**: {self.leader['Name']}")
+        print(f"🏛 **Civilization**: {self.civilization['Name']}")
 
-        # Show civilization bonuses if available
-        if "Bonuses" in civ:
-            print(f"🎖️ **Civilization Bonuses**: {', '.join(civ['Bonuses'])}")
+        if "Ability" in self.leader:
+            print(f"🏆 **Leader Ability**: {self.leader['Ability']}")
+        if "Bonuses" in self.civilization:
+            print(f"🎖️ **Civilization Bonuses**: {', '.join(self.civilization['Bonuses'])}")
+        if "Unique Units" in self.civilization:
+            print(f"⚔️ **Unique Units**: {', '.join(self.civilization['Unique Units'])}")
 
-        # Show unique units if available
-        if "Unique Units" in civ:
-            print(f"⚔️ **Unique Units**: {', '.join(civ['Unique Units'])}")
+    def get_user_choice(self, prompt, options):
+        """Handles user input for choosing an option, displaying options before input"""
+        options_display = " | ".join(options)
+        while True:
+            print(f"{prompt} ({options_display})")
+            choice = input("Enter your choice: ").strip().lower()
+            options_lower = [opt.lower() for opt in options]
+            if choice in options_lower:
+                return options[options_lower.index(choice)]  # Return correctly capitalized version
+            print("❌ Invalid choice. Please try again.")
 
-        # Ask if user wants to reroll
-        reroll = input("\n🔄 Do you want to reroll? (yes/no): ").strip().lower()
-        if reroll != "yes":
-            break
-    else:
-        print("⚠️ No matching leaders or civilizations found. Try again.")
+    def select_initial_setup(self):
+        """Handles initial selection of region and playstyle"""
+        choice_order = self.get_user_choice(
+            "🎭 How would you like to choose your setup?",
+            ["Playstyle", "Region", "Random Everything"]
+        )
+
+        if choice_order == "Random Everything":
+            self.region = self.get_random_choice(list(self.REGIONS.keys())[:-1])
+            self.playstyle = self.get_random_choice(self.PLAYSTYLES)
+        else:
+            if choice_order == "Playstyle":
+                self.playstyle = self.get_user_choice("🎭 Choose your playstyle:", self.PLAYSTYLES + ["Random"])
+                if self.playstyle == "Random":
+                    self.playstyle = self.get_random_choice(self.PLAYSTYLES)
+
+                self.region = self.get_user_choice("🌍 Choose your region:", list(self.REGIONS.keys())[:-1] + ["Random"])
+                if self.region == "Random":
+                    self.region = self.get_random_choice(list(self.REGIONS.keys())[:-1])
+            else:
+                self.region = self.get_user_choice("🌍 Choose your region:", list(self.REGIONS.keys())[:-1] + ["Random"])
+                if self.region == "Random":
+                    self.region = self.get_random_choice(list(self.REGIONS.keys())[:-1])
+
+                self.playstyle = self.get_user_choice("🎭 Choose your playstyle:", self.PLAYSTYLES + ["Random"])
+                if self.playstyle == "Random":
+                    self.playstyle = self.get_random_choice(self.PLAYSTYLES)
+
+        self.select_leader_civ()
+
+    def reroll_options(self):
+        """Handles rerolling logic"""
+        while True:
+            self.display_setup()
+
+            reroll_choices = ["Both", "Playstyle", "Region", "No"]
+            if len(self.matching_leaders) > 1:
+                reroll_choices.insert(1, "Leader Only")
+
+            reroll_choice = self.get_user_choice("🔄 Do you want to reroll?", reroll_choices)
+
+            if reroll_choice == "Both":
+                print("\n🎲 Rerolling everything...\n")
+                self.select_initial_setup()
+            elif reroll_choice == "Playstyle":
+                self.playstyle = self.get_random_choice(self.PLAYSTYLES)
+                print(f"🎲 New Playstyle: {self.playstyle}")
+            elif reroll_choice == "Region":
+                self.region = self.get_random_choice(list(self.REGIONS.keys())[:-1])
+                print(f"🎲 New Region: {self.region}")
+
+            # Ensure we select a new leader if the existing one no longer fits
+            self.select_leader_civ()
+
+            if self.leader and any(self.leader["Historical Civ"] in self.REGIONS[self.region] for leader in self.matching_leaders):
+                print(f"✅ Keeping existing leader: {self.leader['Name']}")
+            else:
+                self.leader = self.get_random_choice(self.matching_leaders)
+                print(f"🎲 New Leader: {self.leader['Name']}")
+
+class GameManager:
+    """Manages the game loop"""
+    @staticmethod
+    def start_game():
+        game = GameSetup()
+        game.select_initial_setup()
+        game.reroll_options()
+
+if __name__ == "__main__":
+    GameManager.start_game()
