@@ -121,15 +121,14 @@ class GameSetup:
             elif reroll_choice == "Region":
                 self.region = self.get_random_choice(list(self.REGIONS.keys())[:-1])
                 print(f"🎲 New Region: {self.region}")
+            elif reroll_choice == "Leader Only":
+                self.leader = self.get_random_choice(self.matching_leaders, exclude=self.leader)
+                print(f"\n👑 Rerolling leader...\n🎲 New Leader: {self.leader['Name']}")
+            elif reroll_choice == "No":
+                print("\n✅ Setup finalized! Enjoy your game!")
+                exit()  # 🚀 Fix: Properly ends the script when "No" is selected!
 
-            # Ensure we select a new leader if the existing one no longer fits
             self.select_leader_civ()
-
-            if self.leader and any(self.leader["Historical Civ"] in self.REGIONS[self.region] for leader in self.matching_leaders):
-                print(f"✅ Keeping existing leader: {self.leader['Name']}")
-            else:
-                self.leader = self.get_random_choice(self.matching_leaders)
-                print(f"🎲 New Leader: {self.leader['Name']}")
 
 class GameManager:
     """Manages the game loop"""
